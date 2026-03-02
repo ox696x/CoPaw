@@ -42,6 +42,7 @@ class RenderStyle:
     supports_markdown: bool = True
     supports_code_fence: bool = True
     use_emoji: bool = True
+    truncate_tools: tuple = ("tavily_search", "browser_use")
 
 
 def _fmt_tool_call(
@@ -178,7 +179,33 @@ class MessageRenderer:
                                 text=_fmt_tool_output_label(name, s),
                             ),
                         )
-                        out.extend(block_parts)
+                        if any(tool in name for tool in s.truncate_tools):
+                            total_len = 0
+                            max_len = 500
+                            for bp in block_parts:
+                                bp_type = getattr(bp, "type", None)
+                                if bp_type == ContentType.TEXT:
+                                    text = getattr(bp, "text", "") or ""
+                                    remaining = max_len - total_len
+                                    if remaining <= 0:
+                                        break
+                                    if len(text) > remaining:
+                                        out.append(
+                                            TextContent(text=text[:remaining] + "...")
+                                        )
+                                        total_len = max_len
+                                        break
+                                    out.append(bp)
+                                    total_len += len(text)
+                                elif bp_type in (
+                                    ContentType.IMAGE,
+                                    ContentType.AUDIO,
+                                    ContentType.VIDEO,
+                                    ContentType.FILE,
+                                ):
+                                    out.append(bp)
+                        else:
+                            out.extend(block_parts)
                     else:
                         media_types = (
                             ContentType.IMAGE,
