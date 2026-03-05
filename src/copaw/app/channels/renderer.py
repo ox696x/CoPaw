@@ -203,7 +203,7 @@ class MessageRenderer:
                                 text=_fmt_tool_output_label(name, s),
                             ),
                         )
-                        if any(tool in name for tool in s.truncate_tools):
+                        if name in s.truncate_tools:
                             _append_truncated_texts(block_parts, 500, out)
                         else:
                             out.extend(block_parts)
