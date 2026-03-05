@@ -254,7 +254,7 @@ class DingTalkChannelHandler(dingtalk_stream.ChatbotHandler):
             logger.debug(
                 "dingtalk request: has_session_webhook=%s sender=%s",
                 bool(sw),
-                sender,
+                sender[:20],
             )
             if sw:
                 meta["session_webhook"] = sw
