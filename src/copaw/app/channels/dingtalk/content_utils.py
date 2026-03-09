@@ -142,66 +142,6 @@ def get_type_mapping() -> dict:
     """Return DingTalk type mapping (for handler use)."""
     return dict(DINGTALK_TYPE_MAPPING)
 
-
-def get_user_id_from_meta(meta: Optional[Dict[str, Any]]) -> Optional[str]:
-    """Extract user_id from meta for DingTalk OpenAPI sending.
-
-    For DingTalk OpenAPI, we need senderStaffId (not senderId).
-    senderStaffId is the actual staff ID like 'maabnr2134'.
-
-    The value is retrieved from meta['sender_staff_id'], which is set by
-    the handler from the incoming message's callback data.
-
-    Returns:
-        The senderStaffId string if available, None otherwise.
-    """
-    logger.debug(
-        "dingtalk get_user_id_from_meta: meta keys=%s",
-        list(meta.keys()) if meta else [],
-    )
-    if not meta:
-        return None
-    staff_id = meta.get("sender_staff_id")
-    if staff_id:
-        logger.debug(
-            "dingtalk get_user_id_from_meta: using sender_staff_id from meta",
-        )
-        return str(staff_id).strip()
-    return None
-
-
-def get_chat_type_from_meta(
-    meta: Optional[Dict[str, Any]],
-) -> Optional[str]:
-    """Determine chat type (direct/group) from meta for OpenAPI sending.
-
-    Returns 'direct' for single chat, 'group' for group chat, None if unknown.
-
-    The conversation type is retrieved from meta['conversation_type'],
-    which is set by the handler from the incoming message's callback data.
-    ConversationType '2' means group chat, anything else means direct chat.
-
-    Returns:
-        'direct' for single chat, 'group' for group chat, None if unknown.
-    """
-    logger.debug(
-        "dingtalk get_chat_type_from_meta: meta keys=%s",
-        list(meta.keys()) if meta else [],
-    )
-    if not meta:
-        return None
-    conv_type = meta.get("conversation_type")
-    if conv_type is not None:
-        logger.debug(
-            "dingtalk: using conversation_type from meta",
-        )
-        if str(conv_type) == "2":
-            return "group"
-        else:
-            return "direct"
-    return None
-
-
 def get_msg_key_for_media_type(media_type: str) -> str:
     """Get msgKey for DingTalk OpenAPI based on media type."""
     logger.debug(

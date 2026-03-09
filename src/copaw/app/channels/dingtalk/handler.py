@@ -233,6 +233,8 @@ class DingTalkChannelHandler(dingtalk_stream.ChatbotHandler):
             conversation_type = conversation_type_from_chatbot_message(
                 incoming_message,
             )
+            # Extract sender_staff_id for DingTalk OpenAPI sending
+            sender_staff_id = callback.data.get("senderStaffId") or ""
             loop = asyncio.get_running_loop()
             reply_future: asyncio.Future[str] = loop.create_future()
             meta: Dict[str, Any] = {
@@ -240,6 +242,7 @@ class DingTalkChannelHandler(dingtalk_stream.ChatbotHandler):
                 "reply_future": reply_future,
                 "reply_loop": loop,
                 "conversation_type": conversation_type,
+                "sender_staff_id": sender_staff_id
             }
             if conversation_id:
                 meta["conversation_id"] = conversation_id
