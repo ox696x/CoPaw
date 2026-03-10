@@ -16,14 +16,33 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
 import {
   BookOpen,
+  Rocket,
+  Zap,
+  Terminal,
+  MessageSquare,
+  Wrench,
+  Plug,
+  Brain,
+  Archive,
+  Command,
+  Activity,
+  Settings,
+  CircleHelp,
+  Users,
+  GitBranch,
+  Map,
   Menu,
+  Cpu,
   ChevronRight,
   ChevronDown,
   ArrowUp,
   Copy,
   Check,
+  Monitor,
+  type LucideIcon,
 } from "lucide-react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
@@ -158,69 +177,103 @@ function parseFaqContent(md: string): { intro: string; items: FaqItem[] } {
   };
 }
 
+const DOC_SLUG_ICONS: Record<string, LucideIcon> = {
+  intro: Rocket,
+  quickstart: Zap,
+  desktop: Monitor,
+  console: Terminal,
+  models: Cpu,
+  channels: MessageSquare,
+  skills: Wrench,
+  mcp: Plug,
+  memory: Brain,
+  compact: Archive,
+  commands: Command,
+  heartbeat: Activity,
+  config: Settings,
+  cli: Terminal,
+  faq: CircleHelp,
+  community: Users,
+  contributing: GitBranch,
+  roadmap: Map,
+};
+
 const DOC_SLUGS: DocEntry[] = [
   { slug: "intro", titleKey: "docs.intro" },
-  { slug: "quickstart", titleKey: "docs.quickstart" },
+  {
+    slug: "quickstart",
+    titleKey: "docs.quickstart",
+    children: [{ slug: "desktop", titleKey: "docs.desktop" }],
+  },
   { slug: "console", titleKey: "docs.console" },
+  { slug: "models", titleKey: "docs.models" },
   { slug: "channels", titleKey: "docs.channels" },
   { slug: "skills", titleKey: "docs.skills" },
   { slug: "mcp", titleKey: "docs.mcp" },
   {
     slug: "memory",
     titleKey: "docs.memory",
-    children: [
-      { slug: "compact", titleKey: "docs.compact" },
-      { slug: "commands", titleKey: "docs.commands" },
-    ],
+    children: [{ slug: "compact", titleKey: "docs.compact" }],
   },
+  { slug: "commands", titleKey: "docs.commands" },
   { slug: "heartbeat", titleKey: "docs.heartbeat" },
   { slug: "config", titleKey: "docs.config" },
   { slug: "cli", titleKey: "docs.cli" },
   { slug: "faq", titleKey: "docs.faq" },
   { slug: "community", titleKey: "docs.community" },
   { slug: "contributing", titleKey: "docs.contributing" },
+  { slug: "roadmap", titleKey: "docs.roadmap" },
 ];
 
 /** Collect all valid slugs (parents + children). */
-const ALL_SLUGS = DOC_SLUGS.flatMap((d) => [
-  d.slug,
-  ...(d.children?.map((c) => c.slug) ?? []),
-]);
+const ALL_SLUGS = [
+  ...DOC_SLUGS.flatMap((d) => [
+    d.slug,
+    ...(d.children?.map((c) => c.slug) ?? []),
+  ]),
+  "comparison", // Hidden page, accessible only via FAQ link
+];
 
 const DOC_TITLES: Record<Lang, Record<string, string>> = {
   zh: {
     "docs.intro": "项目介绍",
     "docs.quickstart": "快速开始",
+    "docs.desktop": "桌面应用",
+    "docs.console": "控制台",
+    "docs.models": "模型",
     "docs.channels": "频道配置",
     "docs.heartbeat": "心跳",
     "docs.cli": "CLI",
-    "docs.console": "控制台",
     "docs.skills": "Skills",
     "docs.mcp": "MCP",
     "docs.memory": "记忆",
     "docs.compact": "压缩",
     "docs.config": "配置与工作目录",
-    "docs.commands": "系统命令",
+    "docs.commands": "魔法命令",
     "docs.faq": "FAQ 常见问题",
     "docs.community": "问题反馈与交流",
     "docs.contributing": "开源与贡献",
+    "docs.roadmap": "路线图",
   },
   en: {
     "docs.intro": "Introduction",
     "docs.quickstart": "Quick start",
+    "docs.desktop": "Desktop App",
+    "docs.console": "Console",
+    "docs.models": "Models",
     "docs.channels": "Channels",
     "docs.heartbeat": "Heartbeat",
     "docs.cli": "CLI",
-    "docs.console": "Console",
     "docs.skills": "Skills",
     "docs.mcp": "MCP",
     "docs.memory": "Memory",
     "docs.compact": "Compaction",
     "docs.config": "Config & working dir",
-    "docs.commands": "Commands",
+    "docs.commands": "Magic commands",
     "docs.faq": "FAQ",
     "docs.community": "Bug reports & community",
     "docs.contributing": "Open source & contribution",
+    "docs.roadmap": "Roadmap",
   },
 };
 
@@ -408,6 +461,7 @@ export function Docs({ config, lang, onLangClick }: DocsProps) {
               const isParentActive =
                 activeSlug === s ||
                 (children?.some((c) => c.slug === activeSlug) ?? false);
+              const ParentIcon = DOC_SLUG_ICONS[s] ?? BookOpen;
               return (
                 <div key={s}>
                   <Link
@@ -425,7 +479,7 @@ export function Docs({ config, lang, onLangClick }: DocsProps) {
                         activeSlug === s ? "var(--bg)" : "transparent",
                     }}
                   >
-                    <BookOpen size={16} strokeWidth={1.5} aria-hidden />
+                    <ParentIcon size={16} strokeWidth={1.5} aria-hidden />
                     {DOC_TITLES[lang][titleKey] ?? titleKey}
                     {children && children.length > 0 && (
                       <ChevronDown
@@ -445,34 +499,42 @@ export function Docs({ config, lang, onLangClick }: DocsProps) {
                   </Link>
                   {children && isParentActive && (
                     <div style={{ paddingLeft: "1.25rem" }}>
-                      {children.map(({ slug: cs, titleKey: ct }) => (
-                        <Link
-                          key={cs}
-                          to={`/docs/${cs}`}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "var(--space-1)",
-                            padding: "var(--space-1) var(--space-2)",
-                            borderRadius: "0.375rem",
-                            fontSize: "0.875rem",
-                            color:
-                              activeSlug === cs
-                                ? "var(--text)"
-                                : "var(--text-muted)",
-                            background:
-                              activeSlug === cs ? "var(--bg)" : "transparent",
-                          }}
-                        >
-                          {DOC_TITLES[lang][ct] ?? ct}
-                          {activeSlug === cs && (
-                            <ChevronRight
+                      {children.map(({ slug: cs, titleKey: ct }) => {
+                        const ChildIcon = DOC_SLUG_ICONS[cs] ?? BookOpen;
+                        return (
+                          <Link
+                            key={cs}
+                            to={`/docs/${cs}`}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "var(--space-1)",
+                              padding: "var(--space-1) var(--space-2)",
+                              borderRadius: "0.375rem",
+                              fontSize: "0.875rem",
+                              color:
+                                activeSlug === cs
+                                  ? "var(--text)"
+                                  : "var(--text-muted)",
+                              background:
+                                activeSlug === cs ? "var(--bg)" : "transparent",
+                            }}
+                          >
+                            <ChildIcon
                               size={14}
-                              style={{ marginLeft: "auto" }}
+                              strokeWidth={1.5}
+                              aria-hidden
                             />
-                          )}
-                        </Link>
-                      ))}
+                            {DOC_TITLES[lang][ct] ?? ct}
+                            {activeSlug === cs && (
+                              <ChevronRight
+                                size={14}
+                                style={{ marginLeft: "auto" }}
+                              />
+                            )}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -492,7 +554,7 @@ export function Docs({ config, lang, onLangClick }: DocsProps) {
                       {faqData.intro ? (
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeHighlight]}
+                          rehypePlugins={[rehypeRaw, rehypeHighlight]}
                         >
                           {faqData.intro}
                         </ReactMarkdown>
@@ -559,7 +621,7 @@ export function Docs({ config, lang, onLangClick }: DocsProps) {
                                 >
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
-                                    rehypePlugins={[rehypeHighlight]}
+                                    rehypePlugins={[rehypeRaw, rehypeHighlight]}
                                   >
                                     {item.answer}
                                   </ReactMarkdown>
@@ -574,7 +636,7 @@ export function Docs({ config, lang, onLangClick }: DocsProps) {
                     <LangContext.Provider value={lang}>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
+                        rehypePlugins={[rehypeRaw, rehypeHighlight]}
                         components={{
                           pre: ({ children, ...props }) => {
                             const langCtx = useContext(LangContext);

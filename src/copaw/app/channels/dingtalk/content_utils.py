@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import base64
 import binascii
+import logging
 import re
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import parse_qs, urlparse
 
 from agentscope_runtime.engine.schemas.agent_schemas import (
-    AudioContent,
+    # AudioContent,
     FileContent,
     ImageContent,
     VideoContent,
@@ -22,6 +23,8 @@ from .constants import (
     DINGTALK_SESSION_ID_SUFFIX_LEN,
     DINGTALK_TYPE_MAPPING,
 )
+
+logger = logging.getLogger(__name__)
 
 
 _DATA_URL_RE = re.compile(
@@ -37,7 +40,14 @@ def dingtalk_content_from_type(mapped: str, url: str) -> Any:
     if mapped == "video":
         return VideoContent(type=ContentType.VIDEO, video_url=url)
     if mapped == "audio":
-        return AudioContent(type=ContentType.AUDIO, data=url)
+        # Use subtype only: runtime prefixes with "audio/" -> "audio/amr".
+        # TODO: change to audio block when as support amr
+        return FileContent(
+            type=ContentType.FILE,
+            file_url=url,
+            # data=url,
+            # format="amr",
+        )
     return FileContent(type=ContentType.FILE, file_url=url)
 
 
@@ -88,6 +98,24 @@ def conversation_id_from_chatbot_message(incoming_message: Any) -> str:
     return str(cid).strip() if cid else ""
 
 
+def conversation_type_from_chatbot_message(incoming_message: Any) -> str:
+    """Extract conversation_type from DingTalk ChatbotMessage.
+
+    Returns:
+        "dm" for direct message (conversationType=1)
+        "group" for group chat (conversationType=2)
+        "dm" as default if not specified
+    """
+    conv_type = getattr(incoming_message, "conversationType", None) or getattr(
+        incoming_message,
+        "conversation_type",
+        None,
+    )
+    if conv_type:
+        return "group" if str(conv_type) == "2" else "dm"
+    return "dm"
+
+
 def short_session_id_from_conversation_id(conversation_id: str) -> str:
     """Use last N chars of conversation_id as session_id."""
     n = DINGTALK_SESSION_ID_SUFFIX_LEN
@@ -110,6 +138,21 @@ def session_param_from_webhook_url(url: str) -> Optional[str]:
     )
 
 
-def get_type_mapping() -> dict:
+def get_type_mapping() -> Dict[str, str]:
     """Return DingTalk type mapping (for handler use)."""
     return dict(DINGTALK_TYPE_MAPPING)
+
+
+def get_msg_key_for_media_type(media_type: str) -> str:
+    """Get msgKey for DingTalk OpenAPI based on media type."""
+    logger.debug(
+        "dingtalk get_msg_key_for_media_type: media_type=%s",
+        media_type,
+    )
+    mapping = {
+        "image": "sampleImageMsg",
+        "voice": "sampleAudio",
+        "video": "sampleVideo",
+        "file": "sampleFile",
+    }
+    return mapping.get(media_type, "sampleFile")

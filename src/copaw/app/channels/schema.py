@@ -34,7 +34,10 @@ BUILTIN_CHANNEL_TYPES = (
     "dingtalk",
     "feishu",
     "qq",
+    "telegram",
+    "mqtt",
     "console",
+    "voice",
 )
 
 # ChannelType is str to allow plugin channels; built-in set above.

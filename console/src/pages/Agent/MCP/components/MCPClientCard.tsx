@@ -1,4 +1,4 @@
-import { Card, Button, Modal } from "@agentscope-ai/design";
+import { Card, Button, Modal, Tooltip } from "@agentscope-ai/design";
 import { DeleteOutlined } from "@ant-design/icons";
 import { Server } from "lucide-react";
 import type { MCPClientInfo } from "../../../../api/types";
@@ -33,9 +33,7 @@ export function MCPClientCard({
 
   // Determine if MCP client is remote or local based on command
   const isRemote =
-    client.command.startsWith("http://") ||
-    client.command.startsWith("https://") ||
-    client.command.includes("://");
+    client.transport === "streamable_http" || client.transport === "sse";
   const clientType = isRemote ? "Remote" : "Local";
 
   const handleToggleClick = (e: React.MouseEvent) => {
@@ -86,21 +84,37 @@ export function MCPClientCard({
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         className={`${styles.mcpCard} ${
-          isHovered ? styles.hover : styles.normal
-        }`}
+          client.enabled ? styles.enabledCard : ""
+        } ${isHovered ? styles.hover : styles.normal}`}
       >
         <div className={styles.cardHeader}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className={styles.fileIcon}>
               <Server style={{ color: "#1890ff", fontSize: 20 }} />
             </span>
-            <h3 className={styles.mcpTitle}>{client.name}</h3>
+            <Tooltip title={client.name}>
+              <h3 className={styles.mcpTitle}>{client.name}</h3>
+            </Tooltip>
             <span
               className={`${styles.typeBadge} ${
                 isRemote ? styles.remote : styles.local
               }`}
             >
               {clientType}
+            </span>
+          </div>
+          <div className={styles.statusContainer}>
+            <span
+              className={`${styles.statusDot} ${
+                client.enabled ? styles.enabled : styles.disabled
+              }`}
+            />
+            <span
+              className={`${styles.statusText} ${
+                client.enabled ? styles.enabled : styles.disabled
+              }`}
+            >
+              {client.enabled ? t("common.enabled") : t("common.disabled")}
             </span>
           </div>
         </div>
@@ -172,29 +186,10 @@ export function MCPClientCard({
           <textarea
             value={editedJson}
             onChange={(e) => setEditedJson(e.target.value)}
-            style={{
-              width: "100%",
-              minHeight: 500,
-              fontFamily: "Monaco, Courier New, monospace",
-              fontSize: 13,
-              padding: 16,
-              border: "1px solid #d9d9d9",
-              borderRadius: 4,
-              resize: "vertical",
-            }}
+            className={styles.editJsonTextArea}
           />
         ) : (
-          <pre
-            style={{
-              backgroundColor: "#f5f5f5",
-              padding: 16,
-              borderRadius: 8,
-              maxHeight: 500,
-              overflow: "auto",
-            }}
-          >
-            {clientJson}
-          </pre>
+          <pre className={styles.preformattedText}>{clientJson}</pre>
         )}
       </Modal>
     </>
