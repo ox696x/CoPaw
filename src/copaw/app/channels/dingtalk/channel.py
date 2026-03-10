@@ -2172,7 +2172,8 @@ class DingTalkChannel(BaseChannel):
         # For private chats (DMs), sender_staff_id is required.
         if conversation_type != "group" and not sender_staff_id:
             logger.warning(
-                "dingtalk OpenAPI send failed: sender_staff_id is required for private chats",
+                "dingtalk OpenAPI send failed: "
+                "sender_staff_id is required for private chats",
             )
             return False
         if await self._send_media_via_openapi(
